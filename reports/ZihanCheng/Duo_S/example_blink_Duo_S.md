@@ -2,7 +2,7 @@
 
 ## LED 闪烁控制测试
 
-本文介绍如何使用 RuyiSDK 在 Milk-V Duo S 开发板上快速部署编译环境，并构建 LED 闪烁控制程序，验证通过 GPIO 控制板载 LED 的基本功能。
+本文介绍如何使用 RuyiSDK 在 Milk-V Duo S 开发板上快速部署编译环境，并构建 LED 闪烁控制程序，验证板载 LED 的控制功能。
 
 ### 1. 准备工作
 
@@ -106,7 +106,29 @@ file blink
 
 scp blink root@192.168.42.1:/root/
 
-# SSH 登录开发板后运行
+# SSH 登录开发板
+
+ssh root@192.168.42.1
+
+```
+
+#### 禁用系统自带 LED 脚本
+
+运行 blink 程序前，需要先禁用系统自带的 LED 闪烁脚本，避免冲突：
+
+```bash
+
+mv /mnt/system/blink.sh /mnt/system/blink.sh_backup && sync
+
+# 执行完后，需要重启开发板，使禁用生效：
+
+reboot
+
+```
+
+重启后重新 SSH 登录
+
+```bash
 
 ssh root@192.168.42.1
 
@@ -122,7 +144,7 @@ chmod +x blink
 
 #### 终端输出：
 
-程序运行后，终端将持续打印 GPIO 控制状态信息：
+程序运行后，终端将持续打印 LED 控制状态信息：
 
 ```bash
 
@@ -157,3 +179,25 @@ Duo LED GPIO (wiringX) 25: Low
 #### 板载 LED 现象：
 
 蓝色 LED 与终端输出同步：输出 High 时 LED 亮起，输出 Low 时 LED 熄灭，形成稳定的闪烁效果。
+
+### 6.恢复系统原有 LED 功能
+
+测试完成后，如需恢复系统原有的 LED 自动闪烁功能，请按以下步骤操作：
+
+```bash
+
+# SSH 登录开发板
+
+ssh root@192.168.42.1
+
+# 恢复 LED 脚本
+
+mv /mnt/system/blink.sh_backup /mnt/system/blink.sh && sync
+
+# 重启开发板使恢复生效
+
+reboot
+
+```
+
+重启后，板载蓝色 LED 将恢复为系统默认的闪烁模式。
