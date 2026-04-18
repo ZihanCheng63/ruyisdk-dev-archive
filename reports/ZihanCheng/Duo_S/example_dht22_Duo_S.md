@@ -1,0 +1,215 @@
+---
+sys: RuyiSDK
+sys_ver: 0.46.0
+sys_var: Buildroot
+provider: milkv
+status: PASS
+last_update: 2026-04-17
+model: Milk-V Duo S
+profile: dht22
+---
+
+# RuyiSDK 外设示例
+
+### 安装 ruyi
+
+#### 安装依赖包
+
+```
+
+sudo apt update; sudo apt install -y wget tar zstd xz-utils git build-essential
+
+```
+
+#### 安装 ruyi 包管理器
+
+```
+
+wget https://mirror.iscas.ac.cn/ruyisdk/ruyi/tags/0.46.0/ruyi-0.46.0.riscv64
+
+chmod +x ruyi-0.46.0.riscv64
+
+sudo cp -v ruyi-0.46.0.riscv64 /usr/local/bin/ruyi
+
+```
+
+#### 安装工具链
+
+```
+
+ruyi update
+
+ruyi install gnu-plct llvm-plct
+
+```
+
+## DHT22 温湿度传感器测试
+
+本文介绍如何使用 RuyiSDK 在 Milk-V Duo S 开发板上快速部署编译环境，构建 DHT22 温湿度传感器测试程序，验证传感器数据读取功能。
+
+### 1. 准备工作
+
+* **开发板**：Milk-V Duo S (512M, SG2000)
+
+* **传感器**：DHT22 温湿度传感器模块
+
+* **其他**：microSD 卡、USB Type-C 数据线、杜邦线 3 根（母对母）
+
+#### 操作系统安装与启动验证
+
+确保您的开发板已刷入 RuyiSDK 支持的 Buildroot 系统镜像。
+
+参考文档：https://milkv.io/zh/docs/duo/getting-started/boot
+
+### 2. 硬件连接
+
+请参考以下引脚对照表及图片将模块连接至 Duo S。
+
+[![dht22 引脚图](https://github.com/ZihanCheng63/my-repo/blob/main/image.png)](https://github.com/ZihanCheng63/my-repo/blob/main/image.png)
+
+  
+
+[![duos-pinout-v1.1](https://raw.githubusercontent.com/jason-hue/riscv-board-custom-dev/main/Duo_S/images/duos-pinout-v1.1.webp)](https://raw.githubusercontent.com/jason-hue/plct/main/duos-pinout-v1.1.webp)
+
+
+
+| 连接名称 | VCC | GND | SIGNAL |
+| -------- | --- | --- | ---- |
+| 连接引脚 | 3.3V | GND | PIN23 |
+
+| DHT22 | 信号 | Milk-V Duo S |
+| ----- | ---- | ------------- |
+| VCC | 3.3V供电 | J3头部 17脚（3.3V） |
+| GND | 地 | J3头部 14脚（GND） |
+| DATA | 数据引脚 | J3头部 23脚 |
+
+
+
+
+![接线图 1](https://github.com/ZihanCheng63/my-repo/blob/main/image-2026041701.png)
+
+![接线图 2](https://github.com/ZihanCheng63/my-repo/blob/main/image-2026041702.png)
+
+### 3. 获取源码并配置环境
+
+#### 克隆源码
+
+```bash
+
+git clone https://github.com/milkv-duo/duo-examples.git
+
+cd duo-examples
+
+```
+
+#### 配置编译环境
+
+```bash
+
+source envsetup.sh
+
+```
+
+### 4. 编译应用与验证
+
+#### 修改 Makefile
+
+```bash
+
+cd dht22
+
+nano Makefile
+
+```
+
+修改以下内容：
+
+```bash
+
+# 在 CC = $(TOOLCHAIN_PREFIX)gcc 下添加：
+
+CFLAGS += -I../wiringX/src
+
+LDFLAGS += -L../libs/system/musl_riscv64 -lwiringx
+
+```
+
+保存并退出。
+
+#### 修改 dht.c
+
+```bash
+
+nano dht.c
+
+```
+
+修改以下两处内容：
+
+```
+
+# 1. 将引脚号改为 23（对应物理引脚 B15）
+
+static int DHTPIN = 23;
+
+# 2. 将初始化参数改为 milkv_duos
+
+if (wiringXSetup("milkv_duos", NULL) == -1)
+
+```
+
+保存并退出。
+
+#### 编译程序
+
+```bash
+
+make
+
+```
+
+#### 验证结果
+
+检查生成的二进制文件：
+
+```bash
+
+file dht22
+
+```
+
+### 5.传输并运行
+
+```bash
+
+# 传输到开发板
+
+scp dht22 root@192.168.42.1:/root/
+
+# SSH 登录开发板
+
+ssh root@192.168.42.1
+
+# 配置引脚功能
+
+duo-pinmux -w B15/B15
+
+# 运行测试
+
+./dht22
+
+```
+
+运行后，终端持续输出温湿度数据：
+
+```bash
+
+Humidity = 51.50 % Temperature = 27.30 *C
+Humidity = 51.60 % Temperature = 27.30 *C
+Humidity = 51.20 % Temperature = 27.30 *C
+Humidity = 51.10 % Temperature = 27.30 *C
+Humidity = 51.20 % Temperature = 27.30 *C
+Humidity = 51.40 % Temperature = 27.30 *C
+...
+
+```
