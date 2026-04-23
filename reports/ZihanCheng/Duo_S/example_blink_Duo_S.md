@@ -41,6 +41,8 @@ ruyi update
 
 ruyi install gnu-plct llvm-plct
 
+ruyi install gnu-milkv-milkv-duo-musl-bin
+
 ```
 
 ## LED 闪烁控制测试
@@ -59,7 +61,7 @@ ruyi install gnu-plct llvm-plct
 
 参考文档：https://milkv.io/zh/docs/duo/getting-started/boot
 
-### 2. 获取源码并配置环境
+### 2. 获取源码
 
 #### 克隆源码
 
@@ -71,23 +73,29 @@ cd duo-examples
 
 ```
 
-#### 配置编译环境
+### 3. 编译应用与验证
+
+#### 创建虚拟环境
 
 ```bash
 
-source envsetup.sh
+ruyi venv -t gnu-milkv-milkv-duo-musl-bin generic ./ruyi_venv
+
+source ruyi_venv/bin/ruyi-activate
 
 ```
 
-### 3. 编译应用与验证
-
-#### 编译构建
+#### 编译 LED 闪烁程序
 
 ```bash
 
 cd blink
 
-make
+riscv64-unknown-linux-musl-gcc -o blink blink.c \
+
+  -I../include -I../wiringX/src \
+
+  -L../libs/system/musl_riscv64 -lwiringx
 
 ```
 
@@ -98,6 +106,14 @@ make
 ```bash
 
 file blink
+
+```
+
+#### 退出虚拟环境
+
+```bash
+
+ruyi-deactivate
 
 ```
 
@@ -121,7 +137,7 @@ ssh root@192.168.42.1
 
 运行 blink 程序前，需要先禁用系统自带的 LED 闪烁脚本，避免冲突：
 
-```
+```bash
 
 mv /mnt/system/blink.sh /mnt/system/blink.sh_backup && sync
 
@@ -139,10 +155,6 @@ ssh root@192.168.42.1
 
 # 运行测试
 
-cd /root
-
-chmod +x blink
-
 ./blink
 
 ```
@@ -150,8 +162,6 @@ chmod +x blink
 运行后终端持续输出 LED 状态：
 
 ```bash
-
-[root@milkv-duo]~# ./blink
 
 Duo LED GPIO (wiringX) 25: High
 
@@ -167,13 +177,13 @@ Duo LED GPIO (wiringX) 25: Low
 
 蓝色 LED 会同步闪烁：`High` 亮起，` Low` 熄灭。
 
-按 ` Ctrl+C ` 可终止程序。
+按 `Ctrl+C`  可终止程序。
 
 ### 5.恢复系统原有 LED 功能
 
 测试完成后，如需恢复系统默认 LED 闪烁：
 
-```
+```bash
 
 ssh root@192.168.42.1
 
